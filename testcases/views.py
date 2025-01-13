@@ -15,6 +15,10 @@ def testcases_view(request):
     return render(request, 'testcases/testcases.html', {'testcases': testcases})
 
 
+from django.db import transaction
+from django.shortcuts import render, redirect
+import json
+from .models import TestCase
 
 def add_test_cases(request):
     if request.method == 'POST':
@@ -25,9 +29,9 @@ def add_test_cases(request):
             if not isinstance(data, dict):
                 raise ValueError("JSON should be a dictionary with numeric keys.")
 
-            # Extract input-output pairs from JSON
+            # Convert numeric-keyed dictionary to a list of input-output pairs
             test_cases_data = [
-                {"input": value.get("Input"), "output": value.get("Output")}
+                {"input": str(value.get("Input")), "output": str(value.get("Output"))}
                 for value in data.values()
                 if isinstance(value, dict) and 'Input' in value and 'Output' in value
             ]
