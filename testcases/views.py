@@ -15,6 +15,7 @@ def testcases_view(request):
     return render(request, 'testcases/testcases.html', {'testcases': testcases})
 
 
+
 def add_test_cases(request):
     if request.method == 'POST':
         json_data = request.POST.get('test_cases_json')  # Get JSON input from textarea
@@ -23,22 +24,39 @@ def add_test_cases(request):
             data = json.loads(json_data)
             if not isinstance(data, dict):
                 raise ValueError("JSON should be a dictionary with numeric keys.")
-            
-            # Prepare TestCase objects for bulk creation
-            test_cases = [
-                TestCase(input=value.get('Input'), output=value.get('Output'))
-                for key, value in data.items()
+
+            # Extract input-output pairs from JSON
+            test_cases_data = [
+                {"input": value.get("Input"), "output": value.get("Output")}
+                for value in data.values()
                 if isinstance(value, dict) and 'Input' in value and 'Output' in value
             ]
-            
-            if not test_cases:
-                return render(request, 'testcases/add_test_cases.html', {'error': 'No valid test cases found in JSON.'})
-            
-            # Use bulk_create within a transaction for efficiency
-            with transaction.atomic():
-                TestCase.objects.bulk_create(test_cases, ignore_conflicts=True)  # Prevent duplicate key errors
 
-            return redirect('testcases')  # Redirect to the test cases page
+            if not test_cases_data:
+                return render(request, 'testcases/add_test_cases.html', {'error': 'No valid test cases found in JSON.'})
+
+            # Fetch existing test cases from the database
+            existing_cases = TestCase.objects.filter(
+                input__in=[case["input"] for case in test_cases_data]
+            ).values_list("input", "output")
+
+            # Create a set of existing input-output pairs for fast lookup
+            existing_set = set(existing_cases)
+
+            # Filter out redundant or duplicate test cases
+            new_test_cases = [
+                TestCase(input=case["input"], output=case["output"])
+                for case in test_cases_data
+                if (case["input"], case["output"]) not in existing_set
+            ]
+
+            # Add only the new, non-redundant test cases
+            if new_test_cases:
+                with transaction.atomic():
+                    TestCase.objects.bulk_create(new_test_cases)
+
+            # Redirect to the test cases page regardless of whether redundancies exist
+            return redirect('testcases')
 
         except json.JSONDecodeError:
             return render(request, 'testcases/add_test_cases.html', {'error': 'Invalid JSON format.'})
@@ -46,4 +64,3 @@ def add_test_cases(request):
             return render(request, 'testcases/add_test_cases.html', {'error': str(e)})
 
     return render(request, 'testcases/add_test_cases.html')
-
