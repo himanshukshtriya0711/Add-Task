@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Cases</title>
+</head>
+<body>
+    <h1>Test Cases</h1>
+
+    <!-- Button to add new test cases (links to add_test_cases.html) -->
+    <a href="{% url 'add_test_cases' %}">
+        <button>Add Test Cases</button>
+    </a>
+
+    <h2>Existing Test Cases</h2>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Input</th>
+                <th>Output</th>
+                <th>Explanation</th>
+                <th>Sample Test Case</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for case in test_cases %}
+            <tr>
+                <td>{{ case.input }}</td>
+                <td>{{ case.output }}</td>
+                <td>{{ case.explanation }}</td>
+                <td>{{ case.sample_test_case }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
