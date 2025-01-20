@@ -1,7 +1,27 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Add Test Cases</title>
+    <style>
+        #json_data {
+            width: 100%;
+            height: 200px;
+            font-family: monospace;
+        }
+        .valid-json {
+            border: 2px solid green;
+            background-color: #e6ffe6;
+        }
+        .invalid-json {
+            border: 2px solid red;
+            background-color: #ffe6e6;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
 </head>
 <body>
     <h1>Add Test Cases</h1>
@@ -10,12 +30,49 @@
     <form method="POST">
         {% csrf_token %}
         <label for="json_data">Test Case JSON:</label><br><br>
-        <textarea id="json_data" name="json_data" rows="10" cols="50" placeholder='Enter JSON data here...'></textarea><br><br>
-        <button type="submit">Submit</button>
+        <textarea id="json_data" name="json_data" placeholder='Enter JSON data here...'></textarea>
+        <p id="json-status" class="hidden"></p>
+        <br>
+        <button type="submit" id="add-btn">Add Test Cases</button> <!-- Initially enabled -->
     </form>
 
     <br>
     <a href="{% url 'testcases' %}">Go Back to Test Cases</a>
 
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const jsonInput = document.getElementById("json_data");
+            const statusMsg = document.getElementById("json-status");
+            const addButton = document.getElementById("add-btn");
+
+            function validateJSON() {
+                if (jsonInput.value.trim() === "") {
+                    // If the input is empty, reset everything (keep button enabled)
+                    jsonInput.classList.remove("valid-json", "invalid-json");
+                    statusMsg.classList.add("hidden");
+                    addButton.disabled = false;
+                    return;
+                }
+
+                try {
+                    JSON.parse(jsonInput.value);
+                    jsonInput.classList.remove("invalid-json");
+                    jsonInput.classList.add("valid-json");
+                    statusMsg.textContent = "✅ Valid JSON format!";
+                    statusMsg.style.color = "green";
+                    addButton.disabled = false; // Keep button enabled for valid JSON
+                } catch (e) {
+                    jsonInput.classList.remove("valid-json");
+                    jsonInput.classList.add("invalid-json");
+                    statusMsg.textContent = "❌ Invalid JSON format! Please correct it.";
+                    statusMsg.style.color = "red";
+                    addButton.disabled = true; // Disable button if JSON is invalid
+                }
+                statusMsg.classList.remove("hidden");
+            }
+
+            jsonInput.addEventListener("input", validateJSON);
+        });
+    </script>
 </body>
 </html>
